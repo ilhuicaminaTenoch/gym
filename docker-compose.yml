@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  postgres:
+    build:
+      context: ./docker/postgres
+    container_name: postgres_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: manijas
+      POSTGRES_PASSWORD: X8iplO72|YQ
+      POSTGRES_DB: gimnasio
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JpbDataSourceConfig">
+    <data-source-infos>
+      <data-source-info id="1279bc73-1f6d-4584-a2a6-611a0391c7fa" persistence-unit-name="gym:gym" />
+    </data-source-infos>
+  </component>
+</project>
