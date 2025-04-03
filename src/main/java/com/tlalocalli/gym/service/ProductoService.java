@@ -1,12 +1,16 @@
 package com.tlalocalli.gym.service;
 
 import com.tlalocalli.gym.persistence.dto.ProductoFilterDto;
+import com.tlalocalli.gym.persistence.dto.request.AjusteStockRequest;
+import com.tlalocalli.gym.persistence.dto.request.ItemAjusteStockRequest;
 import com.tlalocalli.gym.persistence.entity.ProductoEntity;
 import com.tlalocalli.gym.persistence.repository.ProductoRepository;
 import com.tlalocalli.gym.persistence.dto.request.ProductoRequest;
 import com.tlalocalli.gym.persistence.dto.request.ProductoUpdateRequest;
 import com.tlalocalli.gym.persistence.dto.response.ProductoResponse;
 import com.tlalocalli.gym.util.ProductoSpecification;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -108,6 +112,18 @@ public class ProductoService {
         return entities.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void ajustarStock(AjusteStockRequest solicitud) {
+        for (ItemAjusteStockRequest item : solicitud.getItems()) {
+            ProductoEntity producto = productoRepository.findById(item.getIdProducto())
+                    .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado: " + item.getIdProducto()));
+            // Se interpreta el valor negativo para disminuir el stock y el positivo para aumentarlo.
+            int nuevoStock = producto.getStock() + item.getAjuste();
+            producto.setStock(nuevoStock);
+            productoRepository.save(producto);
+        }
     }
 
 }

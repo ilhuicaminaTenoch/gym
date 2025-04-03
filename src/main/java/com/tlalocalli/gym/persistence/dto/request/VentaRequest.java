@@ -11,7 +11,6 @@ import java.util.List;
 
 @Data
 public class VentaRequest {
-    @NotNull(message = "El ID del cliente es obligatorio")
     @Positive(message = "El ID del cliente debe ser un número positivo")
     private Integer idCliente;
 

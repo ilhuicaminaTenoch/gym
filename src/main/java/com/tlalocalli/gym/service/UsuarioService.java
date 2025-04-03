@@ -32,7 +32,7 @@ public class UsuarioService {
         // Hashear la contraseña con BCrypt
         String hashed = BCrypt.hashpw(request.getPassword(), BCrypt.gensalt());
         usuario.setPasswordHash(hashed);
-        // Los valores por defecto para role y estado se establecen en la entidad (por ejemplo, CLIENTE y ACTIVO)
+        usuario.setRole(request.getRole());
 
         UsuarioEntity saved = usuarioRepository.save(usuario);
         log.info("Usuario creado: {}", saved.getUsername());

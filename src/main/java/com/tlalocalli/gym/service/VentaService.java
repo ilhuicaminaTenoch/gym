@@ -18,10 +18,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -43,7 +41,11 @@ public class VentaService {
     @Transactional
     public VentaResponse crearVenta(VentaRequest request) {
         // Obtener entidades: cliente, usuario, caja y turno activo
-        ClienteEntity cliente = findCliente(request.getIdCliente());
+        ClienteEntity cliente = null;
+        if (request.getIdCliente() != null) {
+            cliente = findCliente(request.getIdCliente());
+        }
+
         UsuarioEntity usuario = findUsuario(request.getIdUsuario());
         CajaEntity caja = findCaja(request.getIdCaja());
         TurnoEntity turno = findActiveTurno(request.getIdUsuario());
@@ -52,7 +54,7 @@ public class VentaService {
         VentaDetailData detailData = buildDetalleVentas(request.getDetalles());
 
         // Crear y persistir la venta
-        VentaEntity ventaEntity = createAndSaveVenta(cliente, usuario, turno, request.getMetodoPago(), detailData.getTotal(), detailData.getDetalles());
+        VentaEntity ventaEntity = createAndSaveVenta(usuario, turno, request.getMetodoPago(), detailData.getTotal(), detailData.getDetalles());
 
         // Convertir detalles a DTO
         List<DetalleVentaResponse> detallesResponse = convertDetallesToResponse(ventaEntity.getDetalleVentas());
@@ -63,7 +65,7 @@ public class VentaService {
         // Construir y retornar la respuesta final
         return VentaResponse.builder()
                 .idVenta(ventaEntity.getId())
-                .idCliente(cliente.getId())
+                .idCliente(cliente != null ? cliente.getId() : null)
                 .idUsuario(usuario.getId())
                 .fechaVenta(ventaEntity.getFechaVenta())
                 .metodoPago(ventaEntity.getMetodoPago())
@@ -119,10 +121,9 @@ public class VentaService {
         return new VentaDetailData(total, detalles);
     }
 
-    private VentaEntity createAndSaveVenta(ClienteEntity cliente, UsuarioEntity usuario, TurnoEntity turno, MetodoPago metodoPago, BigDecimal total, List<DetalleVentaEntity> detalles) {
+    private VentaEntity createAndSaveVenta(UsuarioEntity usuario, TurnoEntity turno, MetodoPago metodoPago, BigDecimal total, List<DetalleVentaEntity> detalles) {
         LocalDateTime now = LocalDateTime.now();
         VentaEntity venta = VentaEntity.builder()
-                .cliente(cliente)
                 .usuario(usuario)
                 .turno(turno)
                 .fechaVenta(now)

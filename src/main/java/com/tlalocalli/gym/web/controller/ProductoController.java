@@ -1,6 +1,7 @@
 package com.tlalocalli.gym.web.controller;
 
 import com.tlalocalli.gym.persistence.dto.ProductoFilterDto;
+import com.tlalocalli.gym.persistence.dto.request.AjusteStockRequest;
 import com.tlalocalli.gym.service.ProductoService;
 import com.tlalocalli.gym.persistence.dto.request.ProductoRequest;
 import com.tlalocalli.gym.persistence.dto.request.ProductoUpdateRequest;
@@ -43,6 +44,12 @@ public class ProductoController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProducto(@PathVariable("id") Integer id) {
         productoService.deleteProducto(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/ajustar")
+    public ResponseEntity<Void> ajustarStock(@Valid @RequestBody AjusteStockRequest solicitud) {
+        productoService.ajustarStock(solicitud);
         return ResponseEntity.noContent().build();
     }
 }
