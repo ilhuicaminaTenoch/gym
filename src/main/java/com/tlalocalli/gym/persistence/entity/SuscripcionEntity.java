@@ -28,12 +28,13 @@ public class SuscripcionEntity extends EntidadEditable implements Serializable {
     @JoinColumn(name = "idCliente", nullable = false)
     private ClienteEntity cliente;
 
+    @OneToOne
+    @JoinColumn(name = "idPlan")
+    private PlanSuscripcionEntity plan;
+
     @ManyToOne
     @JoinColumn(name = "idPromocion")
     private PromocionEntity promocion;
-
-    @Column(name = "tipoPlan", length = 100)
-    private String tipoPlan;
 
     @Column(name = "fechaInicio")
     private LocalDateTime fechaInicio;
@@ -44,7 +45,4 @@ public class SuscripcionEntity extends EntidadEditable implements Serializable {
     @Column(name = "estado", length = 50)
     private String estado;
 
-    // Relaciones
-    @OneToMany(mappedBy = "suscripcion", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PagoEntity> pagos = new ArrayList<>();
 }

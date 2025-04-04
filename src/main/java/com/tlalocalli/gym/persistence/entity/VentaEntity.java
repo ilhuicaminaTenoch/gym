@@ -2,6 +2,7 @@ package com.tlalocalli.gym.persistence.entity;
 
 import com.tlalocalli.gym.persistence.audit.EntidadEditable;
 import com.tlalocalli.gym.persistence.enums.MetodoPago;
+import com.tlalocalli.gym.persistence.enums.TipoVenta;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,10 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"cliente", "detalleVentas", "suscripcion", "caja"})
 @Entity
 @Builder
 @Table(name = "VENTA", indexes = {
@@ -49,13 +50,22 @@ public class VentaEntity extends EntidadEditable implements Serializable {
     @Column(name = "metodoPago", length = 50)
     private MetodoPago metodoPago;
 
-    // Relaciones
-    @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<DetalleVentaEntity> detalleVentas = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_venta", nullable = false, length = 50, columnDefinition = "varchar(50) default 'producto'")
+    private TipoVenta tipoVenta;
 
-    // Relación para pagos asociados a una venta en el POS (opcional)
+    @Column(name = "num_transaccion", length = 100)
+    private String numTransaccion;
+
+    // Relaciones
+    @ManyToOne
+    @JoinColumn(name = "id_suscripcion")
+    private SuscripcionEntity suscripcion;
+
+    @ManyToOne
+    @JoinColumn(name = "id_caja")
+    private CajaEntity caja;
+
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<PagoEntity> pagos = new ArrayList<>();
+    private List<DetalleVentaEntity> detalleVentas = new ArrayList<>();
 }

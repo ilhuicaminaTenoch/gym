@@ -40,7 +40,4 @@ public class PromocionEntity extends EntidadEditable implements Serializable {
     @Column(name = "vigenciaFin")
     private LocalDateTime vigenciaFin;
 
-    // Relaciones
-    @OneToMany(mappedBy = "promocion", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PagoEntity> pagos = new ArrayList<>();
 }

@@ -57,6 +57,9 @@ public class ClienteEntity extends EntidadEditable implements Serializable {
     private List<AccesoEntity> accesos = new ArrayList<>();
 
     @OneToOne
+    private SuscripcionEntity suscripcion;
+
+    @OneToOne
     private IntentoAccesoFallidoEntity intentoAccesoFallido;
 
 }

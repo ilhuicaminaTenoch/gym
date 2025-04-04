@@ -15,8 +15,7 @@ public class VentaResponse {
     private Integer idCliente;
     private Integer idUsuario;
     private LocalDateTime fechaVenta;
-    private BigDecimal total;
     private MetodoPago metodoPago;
+    private BigDecimal total;
     private List<DetalleVentaResponse> detalles;
-    private PagoResponse pago;
 }

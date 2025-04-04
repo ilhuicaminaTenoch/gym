@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 public class DetalleVentaResponse {
     private Integer idDetalle;
     private Integer idProducto;
+    private Integer idSuscripcion;
     private Integer cantidad;
     private BigDecimal precioUnitario;
     private BigDecimal subtotal;

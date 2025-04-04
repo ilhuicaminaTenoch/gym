@@ -1,16 +1,16 @@
 package com.tlalocalli.gym.service;
 
 import com.tlalocalli.gym.persistence.dto.request.DetalleVentaRequest;
-import com.tlalocalli.gym.persistence.dto.request.PagoRequest;
 import com.tlalocalli.gym.persistence.dto.request.VentaRequest;
 import com.tlalocalli.gym.persistence.dto.response.DetalleVentaResponse;
-import com.tlalocalli.gym.persistence.dto.response.PagoResponse;
 import com.tlalocalli.gym.persistence.dto.response.VentaResponse;
 import com.tlalocalli.gym.persistence.entity.*;
 import com.tlalocalli.gym.persistence.enums.MetodoPago;
+import com.tlalocalli.gym.persistence.enums.TipoVenta;
 import com.tlalocalli.gym.persistence.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -34,33 +35,64 @@ public class VentaService {
     private final UsuarioRepository usuarioRepository;
     private final ProductoRepository productoRepository;
     private final TurnoRepository turnoRepository;
-    private final PagoRepository pagoRepository;
     private final PromocionRepository promocionRepository;
     private final CajaRepository cajaRepository;
+    private final SuscripcionRepository suscripcionRepository;
 
     @Transactional
     public VentaResponse crearVenta(VentaRequest request) {
-        // Obtener entidades: cliente, usuario, caja y turno activo
         ClienteEntity cliente = null;
+        SuscripcionEntity suscripcionVenta = null;
+        PlanSuscripcionEntity planSuscripcion = null;
+        TipoVenta tipoVenta = null;
+
         if (request.getIdCliente() != null) {
             cliente = findCliente(request.getIdCliente());
         }
-
         UsuarioEntity usuario = findUsuario(request.getIdUsuario());
         CajaEntity caja = findCaja(request.getIdCaja());
         TurnoEntity turno = findActiveTurno(request.getIdUsuario());
 
+
+        if (request.getIdSuscripcion() != null) {
+            suscripcionVenta = findSuscripcion(request.getIdSuscripcion());
+            planSuscripcion = PlanSuscripcionEntity.builder()
+                    .id(suscripcionVenta.getId())
+                    .costoBase(suscripcionVenta.getPlan().getCostoBase())
+                    .build();
+        }
+
         // Procesar detalles: construir lista y calcular total
         VentaDetailData detailData = buildDetalleVentas(request.getDetalles());
 
+        if (suscripcionVenta != null && planSuscripcion != null) {
+            BigDecimal nuevoTotal = detailData.getTotal().add(planSuscripcion.getCostoBase());
+            detailData = new VentaDetailData(nuevoTotal, detailData.getDetalles());
+        }
+
+        if (request.getIdSuscripcion() != null && !detailData.getDetalles().isEmpty()) {
+            tipoVenta = TipoVenta.MIXTO;
+        } else if (request.getIdSuscripcion() != null) {
+            tipoVenta = TipoVenta.SUSCRIPCION;
+        } else if (!detailData.getDetalles().isEmpty()) {
+            tipoVenta = TipoVenta.PRODUCTO;
+        }
+
         // Crear y persistir la venta
-        VentaEntity ventaEntity = createAndSaveVenta(usuario, turno, request.getMetodoPago(), detailData.getTotal(), detailData.getDetalles());
+        VentaEntity ventaEntity = createAndSaveVenta(
+                usuario,
+                turno,
+                caja,
+                suscripcionVenta,
+                tipoVenta,
+                detailData.getTotal(),
+                request.getMetodoPago(),
+                cliente,
+                detailData.getDetalles()
+        );
 
         // Convertir detalles a DTO
-        List<DetalleVentaResponse> detallesResponse = convertDetallesToResponse(ventaEntity.getDetalleVentas());
-
-        // Registrar el pago y obtener su respuesta
-        PagoResponse pagoResponse = registrarPago(ventaEntity, request.getPago(), caja);
+        List<DetalleVentaResponse> detallesResponse = convertDetallesToResponse(ventaEntity.getDetalleVentas(), planSuscripcion);
 
         // Construir y retornar la respuesta final
         return VentaResponse.builder()
@@ -71,8 +103,11 @@ public class VentaService {
                 .metodoPago(ventaEntity.getMetodoPago())
                 .total(ventaEntity.getTotal())
                 .detalles(detallesResponse)
-                .pago(pagoResponse)
                 .build();
+    }
+
+    private SuscripcionEntity findSuscripcion(Integer idSuscripcion) {
+        return suscripcionRepository.findByPlanSuscripcionId(idSuscripcion);
     }
 
     private ClienteEntity findCliente(Integer idCliente) {
@@ -99,47 +134,61 @@ public class VentaService {
 
     /**
      * Procesa la lista de DetalleVentaRequest para construir la lista de entidades DetalleVentaEntity
-     * y calcular el total de la venta.
+     * y calcular el total de la venta. Si el detalle contiene idProducto se trata de un producto;
+     * si contiene idSuscripcion se procesa como detalle de suscripción.
      */
     private VentaDetailData buildDetalleVentas(List<DetalleVentaRequest> detalleRequests) {
         BigDecimal total = BigDecimal.ZERO;
         List<DetalleVentaEntity> detalles = new ArrayList<>();
         for (DetalleVentaRequest detReq : detalleRequests) {
-            var producto = productoRepository.findById(detReq.getIdProducto())
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-            BigDecimal subtotal = detReq.getPrecioUnitario().multiply(BigDecimal.valueOf(detReq.getCantidad()));
-            total = total.add(subtotal);
-
-            DetalleVentaEntity detalle = DetalleVentaEntity.builder()
-                    .producto(producto)
-                    .cantidad(detReq.getCantidad())
-                    .precioUnitario(detReq.getPrecioUnitario())
-                    .subtotal(subtotal)
-                    .build();
-            detalles.add(detalle);
+            // Procesar detalle de producto
+            if (detReq.getIdProducto() != null) {
+                ProductoEntity producto = productoRepository.findById(detReq.getIdProducto())
+                        .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                BigDecimal subtotal = detReq.getPrecioUnitario().multiply(BigDecimal.valueOf(detReq.getCantidad()));
+                total = total.add(subtotal);
+                DetalleVentaEntity detalle = DetalleVentaEntity.builder()
+                        .producto(producto)
+                        .cantidad(detReq.getCantidad())
+                        .precioUnitario(detReq.getPrecioUnitario())
+                        .subtotal(subtotal)
+                        .build();
+                detalles.add(detalle);
+            } else {
+                throw new IllegalArgumentException("Cada detalle debe contener idProducto o idSuscripcion");
+            }
         }
         return new VentaDetailData(total, detalles);
     }
 
-    private VentaEntity createAndSaveVenta(UsuarioEntity usuario, TurnoEntity turno, MetodoPago metodoPago, BigDecimal total, List<DetalleVentaEntity> detalles) {
+    private VentaEntity createAndSaveVenta(UsuarioEntity usuario,
+                                           TurnoEntity turno,
+                                           CajaEntity caja,
+                                           SuscripcionEntity suscripcion,
+                                           TipoVenta tipoVenta,
+                                           BigDecimal total,
+                                           MetodoPago metodoPago,
+                                           ClienteEntity cliente,
+                                           List<DetalleVentaEntity> detalles) {
         LocalDateTime now = LocalDateTime.now();
         VentaEntity venta = VentaEntity.builder()
                 .usuario(usuario)
                 .turno(turno)
+                .caja(caja)
+                .suscripcion(suscripcion)
                 .fechaVenta(now)
                 .metodoPago(metodoPago)
+                .cliente(cliente)
+                .tipoVenta(tipoVenta != null ? tipoVenta : TipoVenta.PRODUCTO)
                 .total(total)
                 .detalleVentas(detalles)
                 .build();
-
-        // Establece la relación bidireccional
         detalles.forEach(detalle -> detalle.setVenta(venta));
-
         return ventaRepository.save(venta);
     }
 
-    private List<DetalleVentaResponse> convertDetallesToResponse(List<DetalleVentaEntity> detalles) {
-        return detalles.stream()
+    private List<DetalleVentaResponse> convertDetallesToResponse(List<DetalleVentaEntity> detalles, PlanSuscripcionEntity planSuscripcion) {
+        List<DetalleVentaResponse> lista = detalles.stream()
                 .map(detalle -> DetalleVentaResponse.builder()
                         .idDetalle(detalle.getId())
                         .idProducto(detalle.getProducto().getId())
@@ -147,38 +196,25 @@ public class VentaService {
                         .precioUnitario(detalle.getPrecioUnitario())
                         .subtotal(detalle.getSubtotal())
                         .build())
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-    }
 
-    public PagoResponse registrarPago(VentaEntity ventaEntity, PagoRequest pagoReq, CajaEntity caja) {
-        PromocionEntity promocion = null;
-        if (pagoReq.getIdPromocion() != null) {
-            promocion = promocionRepository.findById(pagoReq.getIdPromocion())
-                    .orElseThrow(() -> new RuntimeException("Promocion no encontrada"));
+        if (planSuscripcion != null) {
+            DetalleVentaResponse detalleSuscripcion = DetalleVentaResponse.builder()
+                    .idDetalle(null)
+                    .idSuscripcion(planSuscripcion.getId())
+                    .cantidad(1)
+                    .precioUnitario(planSuscripcion.getCostoBase())
+                    .subtotal(planSuscripcion.getCostoBase())
+                    .build();
+            lista.add(detalleSuscripcion);
         }
-
-        PagoEntity pagoEntity = PagoEntity.builder()
-                .venta(ventaEntity)
-                .monto(pagoReq.getMonto())
-                .fechaPago(LocalDateTime.now())
-                .metodoPago(pagoReq.getMetodoPago())
-                .numTransaccion(pagoReq.getNumTransaccion())
-                .promocion(promocion)
-                .caja(caja)
-                .build();
-        pagoEntity = pagoRepository.save(pagoEntity);
-
-        return PagoResponse.builder()
-                .idPago(pagoEntity.getId())
-                .monto(pagoEntity.getMonto())
-                .fechaPago(pagoEntity.getFechaPago())
-                .metodoPago(pagoEntity.getMetodoPago())
-                .numTransaccion(pagoEntity.getNumTransaccion())
-                .idPromocion(pagoEntity.getPromocion() != null ? pagoEntity.getPromocion().getId() : null)
-                .build();
+        return lista;
     }
+
 
     // Clase auxiliar para encapsular el total y la lista de detalles
+    @Getter
     private static class VentaDetailData {
         private final BigDecimal total;
         private final List<DetalleVentaEntity> detalles;
@@ -188,12 +224,5 @@ public class VentaService {
             this.detalles = detalles;
         }
 
-        public BigDecimal getTotal() {
-            return total;
-        }
-
-        public List<DetalleVentaEntity> getDetalles() {
-            return detalles;
-        }
     }
 }
