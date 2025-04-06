@@ -65,11 +65,6 @@ public class VentaService {
         // Procesar detalles: construir lista y calcular total
         VentaDetailData detailData = buildDetalleVentas(request.getDetalles());
 
-        if (suscripcionVenta != null && planSuscripcion != null) {
-            BigDecimal nuevoTotal = detailData.getTotal().add(planSuscripcion.getCostoBase());
-            detailData = new VentaDetailData(nuevoTotal, detailData.getDetalles());
-        }
-
         if (request.getIdSuscripcion() != null && !detailData.getDetalles().isEmpty()) {
             tipoVenta = TipoVenta.MIXTO;
         } else if (request.getIdSuscripcion() != null) {
@@ -77,6 +72,14 @@ public class VentaService {
         } else if (!detailData.getDetalles().isEmpty()) {
             tipoVenta = TipoVenta.PRODUCTO;
         }
+
+
+        if (suscripcionVenta != null && planSuscripcion != null) {
+            BigDecimal nuevoTotal = detailData.getTotal().add(planSuscripcion.getCostoBase());
+            detailData = new VentaDetailData(nuevoTotal, detailData.getDetalles());
+        }
+
+
 
         // Crear y persistir la venta
         VentaEntity ventaEntity = createAndSaveVenta(
@@ -140,22 +143,24 @@ public class VentaService {
     private VentaDetailData buildDetalleVentas(List<DetalleVentaRequest> detalleRequests) {
         BigDecimal total = BigDecimal.ZERO;
         List<DetalleVentaEntity> detalles = new ArrayList<>();
-        for (DetalleVentaRequest detReq : detalleRequests) {
-            // Procesar detalle de producto
-            if (detReq.getIdProducto() != null) {
-                ProductoEntity producto = productoRepository.findById(detReq.getIdProducto())
-                        .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-                BigDecimal subtotal = detReq.getPrecioUnitario().multiply(BigDecimal.valueOf(detReq.getCantidad()));
-                total = total.add(subtotal);
-                DetalleVentaEntity detalle = DetalleVentaEntity.builder()
-                        .producto(producto)
-                        .cantidad(detReq.getCantidad())
-                        .precioUnitario(detReq.getPrecioUnitario())
-                        .subtotal(subtotal)
-                        .build();
-                detalles.add(detalle);
-            } else {
-                throw new IllegalArgumentException("Cada detalle debe contener idProducto o idSuscripcion");
+        if (!detalleRequests.isEmpty()) {
+            for (DetalleVentaRequest detReq : detalleRequests) {
+                // Procesar detalle de producto
+                if (detReq.getIdProducto() != null) {
+                    ProductoEntity producto = productoRepository.findById(detReq.getIdProducto())
+                            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                    BigDecimal subtotal = detReq.getPrecioUnitario().multiply(BigDecimal.valueOf(detReq.getCantidad()));
+                    total = total.add(subtotal);
+                    DetalleVentaEntity detalle = DetalleVentaEntity.builder()
+                            .producto(producto)
+                            .cantidad(detReq.getCantidad())
+                            .precioUnitario(detReq.getPrecioUnitario())
+                            .subtotal(subtotal)
+                            .build();
+                    detalles.add(detalle);
+                } else {
+                    throw new IllegalArgumentException("Cada detalle debe contener idProducto o idSuscripcion");
+                }
             }
         }
         return new VentaDetailData(total, detalles);

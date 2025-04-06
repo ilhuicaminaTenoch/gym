@@ -1,11 +1,8 @@
 package com.tlalocalli.gym.persistence.dto.request;
 
 import com.tlalocalli.gym.persistence.enums.MetodoPago;
-import com.tlalocalli.gym.persistence.enums.TipoVenta;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
 

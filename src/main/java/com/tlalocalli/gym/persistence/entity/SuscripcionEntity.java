@@ -14,10 +14,11 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"cliente", "pagos"})
+@ToString(exclude = {"cliente"})
 @Entity
 @Check(constraints = "fecha_fin > fecha_inicio")
 @Table(name = "SUSCRIPCION")
+@Builder
 public class SuscripcionEntity extends EntidadEditable implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
