@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DiffGenerationConfig">
-    <option name="snapshotDbValue" value="d6aeaf9c-5da5-4f40-adf6-b4bb7e5f6f5a" />
-    <option name="sourceDbValue" value="d6aeaf9c-5da5-4f40-adf6-b4bb7e5f6f5a" />
+    <option name="snapshotDbValue" value="1279bc73-1f6d-4584-a2a6-611a0391c7fa" />
+    <option name="sourceDbValue" value="1279bc73-1f6d-4584-a2a6-611a0391c7fa__gimnasio_gym" />
     <option name="sourceDiffType" value="DB" />
     <option name="sourceModelValue" value="gym:entityManagerFactory" />
     <option name="targetDbValue" value="1279bc73-1f6d-4584-a2a6-611a0391c7fa" />
