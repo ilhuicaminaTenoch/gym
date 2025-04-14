@@ -27,4 +27,8 @@ public class ProductoUpdateRequest {
 
     @Size(max = 100, message = "El código de barras no puede exceder 100 caracteres")
     private String codigoBarras;
+
+    private String imagen;
+
+    private String sku;
 }

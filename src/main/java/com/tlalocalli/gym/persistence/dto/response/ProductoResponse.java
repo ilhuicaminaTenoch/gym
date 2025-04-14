@@ -15,4 +15,6 @@ public class ProductoResponse {
     private BigDecimal precio;
     private Integer stock;
     private String codigoBarras;
+    private String imagen;
+    private String sku;
 }

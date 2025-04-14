@@ -37,6 +37,12 @@ public class ProductoEntity extends EntidadEditable implements Serializable {
     @Column(name = "codigo_barras", unique = true, nullable = false)
     private String codigoBarras;
 
+    @Column(name ="sku", unique = true, nullable = false, length = 50)
+    private String sku;
+
+    @Column(name ="imagen",  length = 100)
+    private String imagen;
+
     // Relaciones
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleVentaEntity> detalleVentas = new ArrayList<>();

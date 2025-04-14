@@ -27,4 +27,9 @@ public class ProductoRequest {
     @Size(max = 100, message = "El código de barras no puede exceder 100 caracteres")
     @UniqueCodigoBarras(message = "El código de barras ya está registrado")
     private String codigoBarras;
+
+    @NotNull(message = "El SKU es obligatorio")
+    private String sku;
+
+    private String imagen;
 }
