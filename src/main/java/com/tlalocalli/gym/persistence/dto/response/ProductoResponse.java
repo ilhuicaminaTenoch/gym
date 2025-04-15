@@ -1,5 +1,6 @@
 package com.tlalocalli.gym.persistence.dto.response;
 
+import com.tlalocalli.gym.persistence.enums.EstatusProducto;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,4 +18,5 @@ public class ProductoResponse {
     private String codigoBarras;
     private String imagen;
     private String sku;
+    private EstatusProducto estatus;
 }

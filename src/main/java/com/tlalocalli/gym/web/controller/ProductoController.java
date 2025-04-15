@@ -28,7 +28,7 @@ public class ProductoController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductoResponse> createProducto(
-            @RequestPart("producto") @Valid ProductoRequest request,
+            @ModelAttribute @Valid ProductoRequest request,
             @RequestPart(value = "imagen", required = false) MultipartFile imagenFile) {
 
         ProductoResponse response = productoService.createProducto(request, imagenFile);
@@ -37,7 +37,7 @@ public class ProductoController {
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductoResponse> updateProducto(
-            @RequestPart("producto") @Valid ProductoUpdateRequest request,
+            @ModelAttribute @Valid ProductoUpdateRequest request,
             @RequestPart(value = "imagen", required = false) MultipartFile imagenFile) {
         ProductoResponse response = productoService.updateProducto(request, imagenFile);
         return ResponseEntity.ok(response);

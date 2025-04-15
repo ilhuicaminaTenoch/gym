@@ -1,5 +1,6 @@
 package com.tlalocalli.gym.persistence.dto.request;
 
+import com.tlalocalli.gym.persistence.enums.EstatusProducto;
 import com.tlalocalli.gym.service.validate.producto.UniqueCodigoBarras;
 import com.tlalocalli.gym.service.validate.producto.UniqueCodigoBarrasOnUpdate;
 import jakarta.validation.constraints.NotNull;
@@ -28,7 +29,7 @@ public class ProductoUpdateRequest {
     @Size(max = 100, message = "El código de barras no puede exceder 100 caracteres")
     private String codigoBarras;
 
-    private String imagen;
-
     private String sku;
+
+    private EstatusProducto estatus;
 }

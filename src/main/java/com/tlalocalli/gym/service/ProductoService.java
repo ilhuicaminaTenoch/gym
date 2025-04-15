@@ -43,6 +43,7 @@ public class ProductoService {
         entity.setStock(request.getStock());
         entity.setCodigoBarras(request.getCodigoBarras());
         entity.setSku(request.getSku());
+        entity.setEstatus(request.getEstatus());
 
         if (imagenFile != null && !imagenFile.isEmpty()) {
             String uniqueFileName = fileUtils.saveImage(imagenFile);
@@ -83,6 +84,9 @@ public class ProductoService {
             String uniqueFileName = fileUtils.saveImage(imagenFile);
             existing.setImagen(uniqueFileName);
         }
+        if (request.getEstatus() != null) {
+            existing.setEstatus(request.getEstatus());
+        }
 
         existing = productoRepository.save(existing);
         log.info("Producto actualizado: {}", existing);
@@ -115,6 +119,7 @@ public class ProductoService {
                 .codigoBarras(entity.getCodigoBarras())
                 .imagen(entity.getImagen())
                 .sku(entity.getSku())
+                .estatus(entity.getEstatus())
                 .build();
     }
 

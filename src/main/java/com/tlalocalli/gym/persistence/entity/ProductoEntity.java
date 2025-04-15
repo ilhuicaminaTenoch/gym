@@ -1,6 +1,7 @@
 package com.tlalocalli.gym.persistence.entity;
 
 import com.tlalocalli.gym.persistence.audit.EntidadEditable;
+import com.tlalocalli.gym.persistence.enums.EstatusProducto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,6 +43,10 @@ public class ProductoEntity extends EntidadEditable implements Serializable {
 
     @Column(name ="imagen",  length = 100)
     private String imagen;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estatus", length = 50)
+    private EstatusProducto estatus;
 
     // Relaciones
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)

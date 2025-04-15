@@ -1,6 +1,9 @@
 package com.tlalocalli.gym.persistence.dto.request;
 
+import com.tlalocalli.gym.persistence.enums.EstatusProducto;
 import com.tlalocalli.gym.service.validate.producto.UniqueCodigoBarras;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -31,5 +34,5 @@ public class ProductoRequest {
     @NotNull(message = "El SKU es obligatorio")
     private String sku;
 
-    private String imagen;
+    private EstatusProducto estatus;
 }
