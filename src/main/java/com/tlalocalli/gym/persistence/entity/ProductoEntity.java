@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import com.tlalocalli.gym.persistence.entity.VariacionProductoEntity;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
