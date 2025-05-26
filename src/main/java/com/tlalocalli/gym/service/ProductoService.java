@@ -5,15 +5,25 @@ import com.tlalocalli.gym.persistence.dto.request.AjusteStockRequest;
 import com.tlalocalli.gym.persistence.dto.request.ItemAjusteStockRequest;
 import com.tlalocalli.gym.persistence.entity.ProductoEntity;
 import com.tlalocalli.gym.persistence.repository.ProductoRepository;
+import com.tlalocalli.gym.persistence.dto.request.VariacionProductoRequest;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tlalocalli.gym.persistence.dto.request.ProductoRequest;
 import com.tlalocalli.gym.persistence.dto.request.ProductoUpdateRequest;
+import com.tlalocalli.gym.persistence.dto.response.VariacionProductoResponse;
+import com.tlalocalli.gym.persistence.entity.VariacionProductoEntity;
 import com.tlalocalli.gym.persistence.dto.response.ProductoResponse;
 import com.tlalocalli.gym.util.FileUtils;
 import com.tlalocalli.gym.util.ProductoSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -33,8 +43,25 @@ public class ProductoService {
     private final ProductoRepository productoRepository;
     private final FileUtils fileUtils;
 
+    @Transactional // Asegurar atomicidad
     public ProductoResponse createProducto(ProductoRequest request, MultipartFile imagenFile) {
-        log.info("Creando nuevo producto: {}", request);
+        log.info("Creando nuevo producto con variaciones: {}", request); 
+
+        // Deserialización de variacionesJson
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<VariacionProductoRequest> variacionesDeserializadas = new ArrayList<>();
+        if (request.getVariacionesJson() != null && !request.getVariacionesJson().isEmpty()) {
+            try {
+                variacionesDeserializadas = objectMapper.readValue(request.getVariacionesJson(), new TypeReference<List<VariacionProductoRequest>>() {});
+                request.setVariaciones(variacionesDeserializadas); // Sobrescribir la lista en ProductoRequest
+            } catch (Exception e) {
+                log.error("Error al deserializar variacionesJson: {}", request.getVariacionesJson(), e);
+                // Considerar lanzar una excepción aquí o manejar el error apropiadamente,
+                // por ejemplo, devolver un ResponseEntity con error o lanzar una excepción custom.
+                // Por ahora, solo logueamos y continuamos con una lista vacía de variaciones si falla.
+                // Esto podría mejorarse con un manejo de errores más robusto.
+            }
+        }
 
         ProductoEntity entity = new ProductoEntity();
         entity.setNombre(request.getNombre());
@@ -52,8 +79,23 @@ public class ProductoService {
             entity.setImagen(null);
         }
 
-        entity = productoRepository.save(entity);
-        return mapToResponse(entity);
+        // Procesar variaciones
+        if (request.getVariaciones() != null && !request.getVariaciones().isEmpty()) {
+            for (VariacionProductoRequest varRequest : request.getVariaciones()) {
+                VariacionProductoEntity variacionEntity = new VariacionProductoEntity();
+                variacionEntity.setAtributos(varRequest.getAtributos());
+                // Asumiendo que la VariacionProductoEntity solo tiene atributos, id y relación al producto.
+                // Si tuviera SKU/precio/stock propios, se setearían aquí.
+
+                variacionEntity.setProducto(entity); // Establecer la relación
+                entity.getVariaciones().add(variacionEntity); // Añadir a la lista del producto para CascadeType.ALL
+            }
+        }
+        
+        ProductoEntity productoGuardado = productoRepository.save(entity);
+        log.info("Producto con variaciones guardado: {}", productoGuardado.getId());
+        
+        return mapToResponse(productoGuardado);
     }
 
     public ProductoResponse updateProducto(ProductoUpdateRequest request, MultipartFile imagenFile) {
@@ -110,6 +152,16 @@ public class ProductoService {
     }
 
     private ProductoResponse mapToResponse(ProductoEntity entity) {
+        List<VariacionProductoResponse> variacionesResponse = Collections.emptyList(); // Inicializar por defecto
+        if (entity.getVariaciones() != null && !entity.getVariaciones().isEmpty()) {
+            variacionesResponse = entity.getVariaciones().stream()
+                    .map(varEntity -> VariacionProductoResponse.builder()
+                            .id(varEntity.getId())
+                            .atributos(varEntity.getAtributos())
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
         return ProductoResponse.builder()
                 .id(entity.getId())
                 .nombre(entity.getNombre())
@@ -120,6 +172,7 @@ public class ProductoService {
                 .imagen(entity.getImagen())
                 .sku(entity.getSku())
                 .estatus(entity.getEstatus())
+                .variaciones(variacionesResponse) // Campo añadido
                 .build();
     }
 

@@ -2,14 +2,18 @@ package com.tlalocalli.gym.persistence.dto.request;
 
 import com.tlalocalli.gym.persistence.enums.EstatusProducto;
 import com.tlalocalli.gym.service.validate.producto.UniqueCodigoBarras;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+// No es necesario importar jakarta.persistence.EnumType y jakarta.persistence.Enumerated aquí
+// ya que no se usan directamente como anotaciones en los campos de este DTO.
+// EstatusProducto es un enum, y su manejo JPA estaría en la entidad.
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class ProductoRequest {
@@ -34,5 +38,10 @@ public class ProductoRequest {
     @NotNull(message = "El SKU es obligatorio")
     private String sku;
 
-    private EstatusProducto estatus;
+    private EstatusProducto estatus; // Asumo que EstatusProducto es un enum definido en tu proyecto
+
+    @Valid // Para que se validen los objetos VariacionProductoRequest dentro de la lista
+    private List<VariacionProductoRequest> variaciones = new ArrayList<>();
+
+    private String variacionesJson; // Nuevo campo añadido
 }

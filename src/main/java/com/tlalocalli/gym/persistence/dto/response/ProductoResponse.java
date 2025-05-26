@@ -5,7 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+// Se elimina la importación de LocalDateTime ya que no se usa en este DTO
+import java.util.List; // Nueva importación
+import com.tlalocalli.gym.persistence.dto.response.VariacionProductoResponse; // Nueva importación
 
 @Data
 @Builder
@@ -19,4 +21,5 @@ public class ProductoResponse {
     private String imagen;
     private String sku;
     private EstatusProducto estatus;
+    private List<VariacionProductoResponse> variaciones; // Nuevo campo
 }
