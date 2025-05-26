@@ -1,36 +1,43 @@
 package com.tlalocalli.gym.persistence.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tlalocalli.gym.persistence.audit.EntidadEditable;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Map;
-import java.util.HashMap; // Import for initializing the map
+import java.math.BigDecimal;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Entity
-@Table(name = "VARIACION_PRODUCTO")
+@Table(name = "producto_variacion")
 public class VariacionProductoEntity extends EntidadEditable implements Serializable {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idVariacionProducto")
-    private Long id;
+    @Column(name = "id_variacion")
+    private Integer id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idProducto", nullable = false)
+    @JoinColumn(name = "id_producto", nullable = false)
     private ProductoEntity producto;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "VARIACION_PRODUCTO_ATRIBUTOS", joinColumns = @JoinColumn(name = "idVariacionProducto"))
-    @MapKeyColumn(name = "atributo_clave", length = 100)
-    @Column(name = "atributo_valor", length = 255)
-    private Map<String, String> atributos = new HashMap<>(); // Initialized map
+    @Column(name = "sku", nullable = false, length = 50)
+    private String sku;
+
+    @Column(name = "precio", precision = 10, scale = 2)
+    private BigDecimal precio;
+
+    @Column(name = "stock")
+    private Integer stock;
+
+    @Column(name = "imagen_url", length = 100)
+    private String imagenUrl;
+
+    @Column(name = "atributos_json", columnDefinition = "jsonb")
+    private String atributosJson;
 }

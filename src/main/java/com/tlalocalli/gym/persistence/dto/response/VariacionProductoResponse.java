@@ -1,13 +1,16 @@
 package com.tlalocalli.gym.persistence.dto.response;
 
-import lombok.Builder;
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Data
-@Builder
 public class VariacionProductoResponse {
-    private Long id; // El ID de la VariacionProductoEntity
+    private Integer id;
+    private String sku;
+    private BigDecimal precio;
+    private Integer stock;
+    private String imagenUrl;
     private Map<String, String> atributos;
-    // Futuros campos como skuVariacion, precioVariacion podrían añadirse aquí si es necesario.
 }
